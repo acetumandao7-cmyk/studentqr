@@ -1,0 +1,55 @@
+{% extends "base.html" %}
+{% block title %}Batch QR Badges - Smart Student Attendance{% endblock %}
+{% block header_title %}Batch Student QR Identification Badges{% endblock %}
+{% block content %}
+<div class="no-print" style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <h2 style="font-size: 1.4rem; font-weight: 800; color: #0f172a;">Printable Student Badges</h2>
+        <p style="color: #64748b; font-size: 0.88rem;">Batch generation of printable ID cards with embedded QR codes ({{ students|length }} loaded)</p>
+    </div>
+    <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+        <form method="GET" action="{{ url_for('admin.batch_qrcodes') }}" style="display: flex; gap: 0.5rem;">
+            <select name="section" class="form-select" onchange="this.form.submit()" style="padding: 0.4rem 0.75rem; font-size: 0.85rem; width: auto;">
+                <option value="">All Sections</option>
+                {% for s in sections %}
+                <option value="{{ s }}" {% if selected_section == s %}selected{% endif %}>Section: {{ s }}</option>
+                {% endfor %}
+            </select>
+        </form>
+        <button onclick="window.print()" class="btn btn-primary btn-sm">
+            <span>Print All Badges</span>
+        </button>
+    </div>
+</div>
+<div style="display: flex; flex-wrap: wrap; gap: 1.5rem; justify-content: center;">
+    {% for student in students %}
+    <div class="id-badge-card" style="margin: 0;">
+        <div class="id-badge-header">
+            <h4>STUDENT IDENTIFICATION</h4>
+            <p>Attendance & Monitoring System</p>
+        </div>
+        <div class="id-badge-body">
+            <div class="id-badge-qr">
+                {% if student.qr_image_path %}
+                <img src="{{ student.qr_image_path }}" alt="QR Code">
+                {% else %}
+                <div style="height: 100%; display: flex; align-items: center; justify-content: center; font-size: 0.75rem; color: #94a3b8;">
+                    No QR
+                </div>
+                {% endif %}
+            </div>
+            <div class="id-badge-name">{{ student.full_name }}</div>
+            <div class="id-badge-meta">{{ student.year_level or '1st Year' }} &bull; {{ student.course_grade }} &bull; {{ student.section }}</div>
+            <div class="id-badge-code">{{ student.student_id }}</div>
+            <div style="margin-top: 1rem; font-size: 0.7rem; color: #94a3b8; border-top: 1px dashed #e2e8f0; padding-top: 0.5rem;">
+                Scan to Record Attendance
+            </div>
+        </div>
+    </div>
+    {% else %}
+    <div class="card" style="width: 100%; text-align: center; padding: 3rem; color: #94a3b8;">
+        No active students found for batch badge printing.
+    </div>
+    {% endfor %}
+</div>
+{% endblock %}

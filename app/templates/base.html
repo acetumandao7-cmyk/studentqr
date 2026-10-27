@@ -1,0 +1,113 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Smart Student Attendance and Monitoring System using QR Code">
+    <title>{% block title %}Smart Attendance & Monitoring System{% endblock %}</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/styles.css') }}">
+    <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+    {% block head_extra %}{% endblock %}
+</head>
+<body>
+    <div class="app-layout">
+        {% if current_user.is_authenticated %}
+        <aside class="app-sidebar">
+            <div class="sidebar-brand">
+                <div class="brand-icon">SQ</div>
+                <div class="brand-title">
+                    <span>SmartAttend</span>
+                    <span class="brand-subtitle">Attendance System</span>
+                </div>
+            </div>
+            <nav class="sidebar-nav">
+                <div class="nav-label">Main Navigation</div>
+                {% if current_user.is_admin %}
+                <a href="{{ url_for('admin.dashboard') }}" class="nav-item {% if request.endpoint == 'admin.dashboard' %}active{% endif %}">
+                    <span>Admin Dashboard</span>
+                </a>
+                <a href="{{ url_for('admin.students_list') }}" class="nav-item {% if 'students' in request.endpoint and request.endpoint != 'admin.batch_qrcodes' %}active{% endif %}">
+                    <span>Student Management</span>
+                </a>
+                <a href="{{ url_for('admin.teachers_list') }}" class="nav-item {% if 'teachers' in request.endpoint %}active{% endif %}">
+                    <span>Faculty / Professors</span>
+                </a>
+                <a href="{{ url_for('admin.batch_qrcodes') }}" class="nav-item {% if request.endpoint == 'admin.batch_qrcodes' %}active{% endif %}">
+                    <span>Batch QR Badges</span>
+                </a>
+                {% endif %}
+                <a href="{{ url_for('attendance.teacher_dashboard') }}" class="nav-item {% if request.endpoint == 'attendance.teacher_dashboard' %}active{% endif %}">
+                    <span>Attendance Monitor</span>
+                </a>
+                <a href="{{ url_for('attendance.scanner') }}" class="nav-item {% if request.endpoint == 'attendance.scanner' %}active{% endif %}">
+                    <span>QR Code Scanner</span>
+                </a>
+                <div class="nav-label">Reports & Settings</div>
+                <a href="{{ url_for('reports.index') }}" class="nav-item {% if 'reports' in request.endpoint %}active{% endif %}">
+                    <span>Attendance Reports</span>
+                </a>
+                {% if current_user.is_admin %}
+                <a href="{{ url_for('admin.sessions_manage') }}" class="nav-item {% if request.endpoint == 'admin.sessions_manage' %}active{% endif %}">
+                    <span>Sessions & Schedules</span>
+                </a>
+                <a href="{{ url_for('admin.system_logs') }}" class="nav-item {% if request.endpoint == 'admin.system_logs' %}active{% endif %}">
+                    <span>Audit Logs</span>
+                </a>
+                {% endif %}
+            </nav>
+            <div class="sidebar-footer">
+                <div class="user-profile-badge">
+                    <div class="user-avatar">{{ current_user.full_name[:2].upper() }}</div>
+                    <div class="user-info">
+                        <span class="user-name" title="{{ current_user.full_name }}">{{ current_user.full_name }}</span>
+                        <span class="user-role">{{ current_user.role }}</span>
+                    </div>
+                </div>
+                <a href="{{ url_for('auth.logout') }}" class="btn btn-outline btn-sm" title="Log Out" style="color: #dc2626; border-color: rgba(220,38,38,0.3); padding: 0.35rem 0.65rem;">
+                    Logout
+                </a>
+            </div>
+        </aside>
+        {% endif %}
+        <main class="app-main{% if not current_user.is_authenticated %} no-sidebar{% endif %}">
+            {% if current_user.is_authenticated %}
+            <header class="app-navbar no-print">
+                <div style="display: flex; align-items: center; gap: 1rem;">
+                    <button id="sidebar-toggle" class="btn btn-outline btn-sm" style="display: none; padding: 0.4rem 0.65rem;">
+                        Menu
+                    </button>
+                    <h1 class="navbar-title">
+                        {% block header_title %}Student Attendance Monitoring{% endblock %}
+                    </h1>
+                </div>
+                <div class="navbar-actions">
+                    <div style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; font-weight: 600; background: #f1f5f9; padding: 0.4rem 0.85rem; border-radius: 6px; color: #1e293b; border: 1px solid #e2e8f0;">
+                        <span id="live-clock">--:--:--</span>
+                    </div>
+                    <a href="{{ url_for('attendance.scanner') }}" class="btn btn-primary btn-sm">
+                        <span>Scan QR</span>
+                    </a>
+                </div>
+            </header>
+            {% endif %}
+            <div class="page-container">
+                <div class="flash-container no-print">
+                    {% with messages = get_flashed_messages(with_categories=true) %}
+                        {% if messages %}
+                            {% for category, message in messages %}
+                                <div class="alert alert-{{ category if category != 'message' else 'info' }}">
+                                    <span>{{ message }}</span>
+                                    <button type="button" onclick="this.parentElement.remove()" style="background:none; border:none; cursor:pointer; font-size:1.1rem; color:inherit; opacity:0.6; line-height:1;">&times;</button>
+                                </div>
+                            {% endfor %}
+                        {% endif %}
+                    {% endwith %}
+                </div>
+                {% block content %}{% endblock %}
+            </div>
+        </main>
+    </div>
+    <script src="{{ url_for('static', filename='js/main.js') }}"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html>

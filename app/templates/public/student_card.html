@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>{{ student.full_name }} - Verified Digital Student ID</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&family=JetBrains+Mono:wght@600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --primary: #0284c7;
+            --primary-dark: #0369a1;
+            --success: #16a34a;
+            --warning: #d97706;
+            --danger: #dc2626;
+            --bg: #0b1329;
+            --card-bg: #ffffff;
+            --text-dark: #0f172a;
+            --text-muted: #64748b;
+        }
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+        body {
+            font-family: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, sans-serif;
+            background: linear-gradient(135deg, #0b1329 0%, #1e293b 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: flex-start;
+            padding: 1.25rem 1rem 2.5rem;
+            color: var(--text-dark);
+            -webkit-font-smoothing: antialiased;
+        }
+        .mobile-container {
+            width: 100%;
+            max-width: 440px;
+            margin: 0 auto;
+        }
+        .header-bar {
+            text-align: center;
+            margin-bottom: 1rem;
+            color: #ffffff;
+        }
+        .header-bar h1 {
+            font-size: 0.85rem;
+            letter-spacing: 0.1em;
+            text-transform: uppercase;
+            font-weight: 700;
+            opacity: 0.85;
+        }
+        .id-badge {
+            background: var(--card-bg);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.35), 0 0 0 1px rgba(255, 255, 255, 0.1);
+            overflow: hidden;
+            position: relative;
+        }
+        .badge-banner {
+            background: linear-gradient(135deg, #0284c7 0%, #1e40af 100%);
+            padding: 1.5rem 1.25rem 2.5rem;
+            color: #ffffff;
+            text-align: center;
+            position: relative;
+        }
+        .institution-name {
+            font-size: 0.72rem;
+            font-weight: 800;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            opacity: 0.9;
+        }
+        .institution-sub {
+            font-size: 0.65rem;
+            opacity: 0.75;
+            margin-top: 0.15rem;
+        }
+        .verification-tag {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.35rem;
+            margin-top: 0.75rem;
+            background: rgba(255, 255, 255, 0.18);
+            backdrop-filter: blur(8px);
+            padding: 0.3rem 0.75rem;
+            border-radius: 9999px;
+            font-size: 0.72rem;
+            font-weight: 700;
+            letter-spacing: 0.05em;
+            text-transform: uppercase;
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
+        .pulse-dot {
+            width: 7px;
+            height: 7px;
+            border-radius: 50%;
+            background: #4ade80;
+            box-shadow: 0 0 0 3px rgba(74, 222, 128, 0.35);
+        }
+        .badge-content {
+            padding: 0 1.25rem 1.5rem;
+            margin-top: -1.5rem;
+            position: relative;
+        }
+        .avatar-wrap {
+            width: 76px;
+            height: 76px;
+            margin: 0 auto;
+            border-radius: 50%;
+            background: #ffffff;
+            padding: 4px;
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.15);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .avatar-circle {
+            width: 100%;
+            height: 100%;
+            border-radius: 50%;
+            background: linear-gradient(135deg, #38bdf8 0%, #0284c7 100%);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: #ffffff;
+            font-weight: 800;
+            font-size: 1.5rem;
+        }
+        .student-name {
+            font-size: 1.25rem;
+            font-weight: 800;
+            text-align: center;
+            color: #0f172a;
+            margin-top: 0.65rem;
+        }
+        .student-id-code {
+            text-align: center;
+            font-family: 'JetBrains Mono', monospace;
+            font-size: 0.88rem;
+            font-weight: 700;
+            color: #0284c7;
+            background: #f0f9ff;
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 8px;
+            margin: 0.35rem auto 0;
+            border: 1px solid #bae6fd;
+        }
+        .id-center {
+            text-align: center;
+        }
+        .program-pill {
+            text-align: center;
+            margin-top: 0.65rem;
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #475569;
+        }
+        .info-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 1rem;
+            margin-top: 1rem;
+        }
+        .info-row {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            padding: 0.45rem 0;
+            border-bottom: 1px dashed #e2e8f0;
+            font-size: 0.8rem;
+        }
+        .info-row:last-child {
+            border-bottom: none;
+            padding-bottom: 0;
+        }
+        .info-label {
+            color: var(--text-muted);
+            font-weight: 600;
+        }
+        .info-val {
+            font-weight: 700;
+            color: #0f172a;
+            text-align: right;
+            max-width: 60%;
+        }
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 0.5rem;
+            margin-top: 1rem;
+        }
+        .stat-box {
+            text-align: center;
+            padding: 0.75rem 0.4rem;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.02);
+        }
+        .stat-number {
+            font-size: 1.3rem;
+            font-weight: 800;
+            line-height: 1;
+        }
+        .stat-label {
+            font-size: 0.65rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--text-muted);
+            margin-top: 0.35rem;
+            letter-spacing: 0.04em;
+        }
+        .history-card {
+            margin-top: 1rem;
+            background: #ffffff;
+            border: 1px solid #e2e8f0;
+            border-radius: 14px;
+            padding: 1rem;
+        }
+        .history-title {
+            font-size: 0.78rem;
+            font-weight: 800;
+            text-transform: uppercase;
+            color: #475569;
+            letter-spacing: 0.06em;
+            margin-bottom: 0.65rem;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .history-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 0.45rem 0;
+            border-bottom: 1px solid #f1f5f9;
+            font-size: 0.76rem;
+        }
+        .history-item:last-child {
+            border-bottom: none;
+        }
+        .status-badge {
+            font-size: 0.68rem;
+            font-weight: 700;
+            padding: 0.2rem 0.5rem;
+            border-radius: 6px;
+        }
+        .badge-present {
+            background: #dcfce7;
+            color: #15803d;
+        }
+        .badge-late {
+            background: #fef3c7;
+            color: #b45309;
+        }
+        .badge-absent {
+            background: #fee2e2;
+            color: #b91c1c;
+        }
+        .footer-note {
+            text-align: center;
+            font-size: 0.68rem;
+            color: #94a3b8;
+            margin-top: 1.25rem;
+            line-height: 1.5;
+        }
+    </style>
+</head>
+<body>
+    <div class="mobile-container">
+        <div class="header-bar">
+            <h1>Institutional Attendance Record</h1>
+        </div>
+
+        {% if scan_result %}
+        <div style="background: {% if scan_result.is_new %}{% if scan_result.status == 'Present' %}linear-gradient(135deg, #16a34a 0%, #15803d 100%){% else %}linear-gradient(135deg, #d97706 0%, #b45309 100%){% endif %}{% else %}linear-gradient(135deg, #0284c7 0%, #0369a1 100%){% endif %}; color: #ffffff; padding: 1rem 1.25rem; border-radius: 16px; margin-bottom: 1rem; box-shadow: 0 10px 25px rgba(0, 0, 0, 0.25); text-align: center;">
+            <div style="display: inline-flex; align-items: center; justify-content: center; width: 36px; height: 36px; border-radius: 50%; background: rgba(255, 255, 255, 0.2); margin-bottom: 0.4rem; font-size: 1.2rem; font-weight: 800;">
+                {% if scan_result.is_new %}✓{% else %}ℹ{% endif %}
+            </div>
+            <div style="font-weight: 800; font-size: 1.05rem;">
+                {% if scan_result.is_new %}Attendance Recorded!{% else %}Checked In Today{% endif %}
+            </div>
+            <div style="font-size: 0.82rem; opacity: 0.95; margin-top: 0.25rem;">
+                Marked as <strong>{{ scan_result.status }}</strong> for {{ scan_result.session_name }} at {{ scan_result.time_str }}
+            </div>
+            {% if student.teacher %}
+            <div style="font-size: 0.72rem; background: rgba(0,0,0,0.2); display: inline-block; padding: 0.2rem 0.6rem; border-radius: 6px; margin-top: 0.5rem; font-weight: 600;">
+                Logged to: Prof. {{ student.teacher.full_name }}
+            </div>
+            {% endif %}
+        </div>
+        {% endif %}
+
+        <div class="id-badge">
+            <div class="badge-banner">
+                <div class="institution-name">ICCT COLLEGES FOUNDATION</div>
+                <div class="institution-sub">Smart Student QR Attendance System</div>
+                <div class="verification-tag">
+                    <span class="pulse-dot"></span>
+                    <span>Verified Active Student</span>
+                </div>
+            </div>
+
+            <div class="badge-content">
+                <div class="avatar-wrap">
+                    <div class="avatar-circle">
+                        {{ student.first_name[0] }}{{ student.last_name[0] }}
+                    </div>
+                </div>
+
+                <div class="student-name">{{ student.full_name }}</div>
+                <div class="id-center">
+                    <div class="student-id-code">{{ student.student_id }}</div>
+                </div>
+
+                <div class="program-pill">
+                    {{ student.year_level }} &bull; {{ student.course_grade }} ({{ student.section }})
+                </div>
+
+                <div class="stats-grid">
+                    <div class="stat-box">
+                        <div class="stat-number" style="color: #16a34a;">{{ total_present }}</div>
+                        <div class="stat-label">Present</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number" style="color: #d97706;">{{ total_late }}</div>
+                        <div class="stat-label">Late</div>
+                    </div>
+                    <div class="stat-box">
+                        <div class="stat-number" style="color: #0284c7;">{{ rate }}%</div>
+                        <div class="stat-label">Turnout</div>
+                    </div>
+                </div>
+
+                <div class="info-card">
+                    <div class="info-row">
+                        <span class="info-label">Assigned Professor</span>
+                        <span class="info-val">{{ ('Prof. ' ~ student.teacher.full_name) if student.teacher else 'Unassigned' }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Enrolled Subject</span>
+                        <span class="info-val">{{ student.subject or 'General' }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Class Schedule</span>
+                        <span class="info-val">{{ student.class_time or 'Standard' }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Gender</span>
+                        <span class="info-val">{{ student.gender }}</span>
+                    </div>
+                    <div class="info-row">
+                        <span class="info-label">Status</span>
+                        <span class="info-val" style="color: #16a34a;">{{ student.status }}</span>
+                    </div>
+                </div>
+
+                <div class="history-card">
+                    <div class="history-title">
+                        <span>Recent Attendance</span>
+                        <span style="font-weight: 600; color: #94a3b8; font-size: 0.7rem;">{{ recent_records|length }} logged</span>
+                    </div>
+                    {% for r in recent_records %}
+                    <div class="history-item">
+                        <div>
+                            <div style="font-weight: 700; color: #0f172a;">{{ r.date.strftime('%b %d, %Y') }}</div>
+                            <div style="font-size: 0.68rem; color: #64748b;">{{ r.session.name if r.session else 'Session' }} &bull; {{ r.timestamp.strftime('%I:%M %p') }}</div>
+                        </div>
+                        <span class="status-badge {% if r.status == 'Present' %}badge-present{% elif r.status == 'Late' %}badge-late{% else %}badge-absent{% endif %}">
+                            {{ r.status }}
+                        </span>
+                    </div>
+                    {% else %}
+                    <div style="text-align: center; color: #94a3b8; padding: 1rem 0; font-size: 0.75rem;">
+                        No attendance scans recorded yet.
+                    </div>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+
+        <div class="footer-note">
+            Authentic Digital Identification Record &bull; QR Attendance System<br>
+            Scanned directly from Institutional Student Badge
+        </div>
+    </div>
+</body>
+</html>

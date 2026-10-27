@@ -1,0 +1,151 @@
+{% extends "base.html" %}
+{% block title %}Attendance Reports - Smart Student Attendance{% endblock %}
+{% block header_title %}Attendance Analytics & Reports{% endblock %}
+{% block content %}
+<div class="no-print" style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <h2 style="font-size: 1.4rem; font-weight: 800; color: #0f172a;">Attendance Reports</h2>
+        <p style="color: #64748b; font-size: 0.88rem;">Audit daily, weekly, and monthly attendance records with export capabilities</p>
+    </div>
+    <div style="display: flex; gap: 0.5rem;">
+        <a href="{{ url_for('reports.export_csv', time_frame=time_frame, start_date=start_date, end_date=end_date, section=section, course_grade=course_grade, status=status, session_id=session_id) }}" class="btn btn-success btn-sm">
+            <span>Export to CSV</span>
+        </a>
+        <button onclick="window.print()" class="btn btn-outline btn-sm">
+            <span>Print Report</span>
+        </button>
+    </div>
+</div>
+<div class="card no-print" style="margin-bottom: 1.5rem;">
+    <div class="card-body" style="padding: 1.25rem;">
+        <div style="display: flex; gap: 0.5rem; margin-bottom: 1.25rem; flex-wrap: wrap;">
+            <a href="{{ url_for('reports.index', time_frame='today', section=section, status=status) }}" class="btn btn-sm {% if time_frame == 'today' %}btn-primary{% else %}btn-outline{% endif %}">
+                Today
+            </a>
+            <a href="{{ url_for('reports.index', time_frame='weekly', section=section, status=status) }}" class="btn btn-sm {% if time_frame == 'weekly' %}btn-primary{% else %}btn-outline{% endif %}">
+                Past 7 Days (Weekly)
+            </a>
+            <a href="{{ url_for('reports.index', time_frame='monthly', section=section, status=status) }}" class="btn btn-sm {% if time_frame == 'monthly' %}btn-primary{% else %}btn-outline{% endif %}">
+                Past 30 Days (Monthly)
+            </a>
+        </div>
+        <form method="GET" action="{{ url_for('reports.index') }}" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) 100px; gap: 1rem; align-items: flex-end;">
+            <input type="hidden" name="time_frame" value="{{ time_frame }}">
+            <div>
+                <label class="form-label">Start Date</label>
+                <input type="date" name="start_date" value="{{ start_date }}" class="form-control">
+            </div>
+            <div>
+                <label class="form-label">End Date</label>
+                <input type="date" name="end_date" value="{{ end_date }}" class="form-control">
+            </div>
+            <div>
+                <label class="form-label">Section</label>
+                <select name="section" class="form-select">
+                    <option value="">All Sections</option>
+                    {% for s in sections %}
+                    <option value="{{ s }}" {% if section == s %}selected{% endif %}>{{ s }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="form-label">Status</label>
+                <select name="status" class="form-select">
+                    <option value="">All Statuses</option>
+                    <option value="Present" {% if status == 'Present' %}selected{% endif %}>Present</option>
+                    <option value="Late" {% if status == 'Late' %}selected{% endif %}>Late</option>
+                    <option value="Absent" {% if status == 'Absent' %}selected{% endif %}>Absent</option>
+                </select>
+            </div>
+            <div>
+                <label class="form-label">Session</label>
+                <select name="session_id" class="form-select">
+                    <option value="">All Sessions</option>
+                    {% for sess in sessions %}
+                    <option value="{{ sess.id }}" {% if session_id == sess.id %}selected{% endif %}>{{ sess.name }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <button type="submit" class="btn btn-primary" style="padding: 0.65rem;">Apply</button>
+        </form>
+    </div>
+</div>
+<div class="metrics-grid">
+    <div class="metric-card accent-green">
+        <div class="metric-info">
+            <h3>Total Attendance Records</h3>
+            <div class="metric-value">{{ total_count }}</div>
+        </div>
+    </div>
+    <div class="metric-card accent-green">
+        <div class="metric-info">
+            <h3>Verified Present</h3>
+            <div class="metric-value" style="color: #059669;">{{ total_present }}</div>
+        </div>
+    </div>
+    <div class="metric-card accent-amber">
+        <div class="metric-info">
+            <h3>Recorded Late</h3>
+            <div class="metric-value" style="color: #d97706;">{{ total_late }}</div>
+        </div>
+    </div>
+    <div class="metric-card accent-red">
+        <div class="metric-info">
+            <h3>Unexcused Absences</h3>
+            <div class="metric-value" style="color: #dc2626;">{{ total_absent }}</div>
+        </div>
+    </div>
+</div>
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">
+            Attendance Log (Date Window: {{ start_date }} to {{ end_date }})
+        </h3>
+        <span style="font-size: 0.8rem; color: #64748b;">Showing {{ records|length }} records</span>
+    </div>
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Record Date</th>
+                    <th>Exact Time</th>
+                    <th>Student ID</th>
+                    <th>Full Name</th>
+                    <th>Year & Course</th>
+                    <th>Section</th>
+                    <th>Session</th>
+                    <th>Status</th>
+                    <th>Recorded By</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for r in records %}
+                <tr>
+                    <td style="font-weight: 600;">{{ r.date.strftime('%Y-%m-%d') }}</td>
+                    <td style="font-family: monospace; font-size: 0.82rem;">{{ r.timestamp.strftime('%I:%M:%S %p') }}</td>
+                    <td style="font-family: monospace; font-weight: 700;">{{ r.student.student_id }}</td>
+                    <td style="font-weight: 700; color: #0f172a;">{{ r.student.full_name }}</td>
+                    <td><span style="font-size: 0.78rem; color: #64748b;">{{ r.student.year_level or '' }}</span> <strong>{{ r.student.course_grade }}</strong></td>
+                    <td><span style="font-weight: 600;">{{ r.student.section }}</span></td>
+                    <td>{{ r.session.name }}</td>
+                    <td>
+                        <span class="badge {% if r.status == 'Present' %}badge-present{% elif r.status == 'Late' %}badge-late{% else %}badge-absent{% endif %}">
+                            {{ r.status }}
+                        </span>
+                    </td>
+                    <td style="font-size: 0.8rem; color: #64748b;">
+                        {{ r.scanner.full_name if r.scanner else 'System Override' }}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="9" style="text-align: center; color: #94a3b8; padding: 2.5rem;">
+                        No attendance records match the selected date and filter range.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

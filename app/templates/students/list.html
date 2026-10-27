@@ -1,0 +1,142 @@
+{% extends "base.html" %}
+{% block title %}Student Management - Smart Student Attendance{% endblock %}
+{% block header_title %}Student Directory & Profiles{% endblock %}
+{% block content %}
+<div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <h2 style="font-size: 1.4rem; font-weight: 800; color: #0f172a;">Student Directory</h2>
+        <p style="color: #64748b; font-size: 0.88rem;">Manage enrolled students, course allocations, and unique QR identifiers</p>
+    </div>
+    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+        <a href="{{ url_for('admin.student_create') }}" class="btn btn-primary btn-sm">
+            <span>Register Student</span>
+        </a>
+        <a href="{{ url_for('admin.batch_qrcodes') }}" class="btn btn-outline btn-sm">
+            <span>Print All QR Badges</span>
+        </a>
+    </div>
+</div>
+
+<div class="card" style="margin-bottom: 1.5rem;">
+    <div class="card-body" style="padding: 1.25rem;">
+        <form method="GET" action="{{ url_for('admin.students_list') }}" style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)) 120px; gap: 1rem; align-items: flex-end;">
+            <div>
+                <label class="form-label">Search Query</label>
+                <input type="text" name="search" value="{{ search }}" class="form-control" placeholder="Search by name or ID...">
+            </div>
+            <div>
+                <label class="form-label">Year Level</label>
+                <select name="year_level" class="form-select">
+                    <option value="">All Year Levels</option>
+                    {% for y in year_levels %}
+                    <option value="{{ y }}" {% if selected_year_level == y %}selected{% endif %}>{{ y }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="form-label">Course Program</label>
+                <select name="course_grade" class="form-select">
+                    <option value="">All Courses</option>
+                    {% for c in courses %}
+                    <option value="{{ c }}" {% if selected_course == c %}selected{% endif %}>{{ c }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="form-label">Section</label>
+                <select name="section" class="form-select">
+                    <option value="">All Sections</option>
+                    {% for s in sections %}
+                    <option value="{{ s }}" {% if selected_section == s %}selected{% endif %}>{{ s }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="form-label">Status</label>
+                <select name="status" class="form-select">
+                    <option value="">All Statuses</option>
+                    <option value="Active" {% if selected_status == 'Active' %}selected{% endif %}>Active</option>
+                    <option value="Inactive" {% if selected_status == 'Inactive' %}selected{% endif %}>Inactive</option>
+                </select>
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+                <button type="submit" class="btn btn-primary" style="flex: 1; padding: 0.65rem;">Filter</button>
+                <a href="{{ url_for('admin.students_list') }}" class="btn btn-outline" style="padding: 0.65rem 0.85rem;" title="Reset">Clear</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Enrolled Students ({{ students|length }})</h3>
+    </div>
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Student ID</th>
+                    <th>Full Name</th>
+                    <th>Year & Course</th>
+                    <th>Section</th>
+                    <th>Professor & Subject</th>
+                    <th>Schedule Time</th>
+                    <th>Status</th>
+                    <th style="text-align: right;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for student in students %}
+                <tr>
+                    <td style="font-family: 'JetBrains Mono', monospace; font-weight: 700; color: #1e293b;">
+                        {{ student.student_id }}
+                    </td>
+                    <td style="font-weight: 700; color: #0f172a;">
+                        <a href="{{ url_for('admin.student_detail', id=student.id) }}" style="color: inherit; text-decoration: underline dotted;">
+                            {{ student.full_name }}
+                        </a>
+                        <div style="font-size: 0.72rem; color: #64748b; font-weight: 400;">{{ student.gender }}</div>
+                    </td>
+                    <td>
+                        <span style="font-weight: 700; color: #0284c7;">{{ student.course_grade }}</span>
+                        <div style="font-size: 0.72rem; color: #64748b;">{{ student.year_level or '1st Year' }}</div>
+                    </td>
+                    <td><span style="font-weight: 600; color: #334155;">{{ student.section }}</span></td>
+                    <td style="font-size: 0.82rem;">
+                        <div style="font-weight: 600; color: #0f172a;">{{ student.subject or 'None' }}</div>
+                        <div style="color: #64748b; font-size: 0.75rem;">{{ ('Prof. ' ~ student.teacher.full_name) if student.teacher else 'Unassigned' }}</div>
+                    </td>
+                    <td style="font-size: 0.8rem; color: #475569;">
+                        {{ student.class_time or 'Flexible' }}
+                    </td>
+                    <td>
+                        <span class="badge {% if student.status == 'Active' %}badge-present{% else %}badge-absent{% endif %}">
+                            {{ student.status }}
+                        </span>
+                    </td>
+                    <td style="text-align: right; white-space: nowrap;">
+                        <a href="{{ url_for('admin.student_detail', id=student.id) }}" class="btn btn-outline btn-sm">
+                            <span>Badge</span>
+                        </a>
+                        <a href="{{ url_for('admin.student_edit', id=student.id) }}" class="btn btn-outline btn-sm">
+                            <span>Edit</span>
+                        </a>
+                        <form action="{{ url_for('admin.student_delete', id=student.id) }}" method="POST" style="display: inline-block;" onsubmit="return confirm('Are you sure you want to delete student {{ student.full_name }}? All attendance history will be permanently deleted.');">
+                            <button type="submit" class="btn btn-outline btn-sm" style="color: #dc2626; border-color: rgba(220, 38, 38, 0.25);">
+                                <span>Delete</span>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="9" style="text-align: center; color: #94a3b8; padding: 2.5rem;">
+                        No student records match the search criteria.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

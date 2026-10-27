@@ -1,0 +1,82 @@
+{% extends "base.html" %}
+{% block title %}System Logs - Smart Student Attendance{% endblock %}
+{% block header_title %}Security & System Audit Logs{% endblock %}
+{% block content %}
+<div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <h2 style="font-size: 1.4rem; font-weight: 800; color: #0f172a;">System Audit Trail</h2>
+        <p style="color: #64748b; font-size: 0.88rem;">Track user sign-ins, QR scan events, student profile modifications, and security actions</p>
+    </div>
+    <form method="GET" action="{{ url_for('admin.system_logs') }}" style="display: flex; gap: 0.5rem;">
+        <select name="action" class="form-select" onchange="this.form.submit()" style="padding: 0.4rem 0.75rem; font-size: 0.85rem; width: auto;">
+            <option value="">All Log Actions</option>
+            {% for a in actions %}
+            <option value="{{ a }}" {% if selected_action == a %}selected{% endif %}>{{ a }}</option>
+            {% endfor %}
+        </select>
+    </form>
+</div>
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Activity Trail</h3>
+        <span style="font-size: 0.8rem; color: #64748b;">Page {{ pagination.page }} of {{ pagination.pages or 1 }}</span>
+    </div>
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Timestamp</th>
+                    <th>Action</th>
+                    <th>Initiator</th>
+                    <th>IP Address</th>
+                    <th>Event Details</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for log in logs %}
+                <tr>
+                    <td style="font-family: monospace; font-size: 0.82rem; color: #64748b; white-space: nowrap;">
+                        {{ log.created_at.strftime('%Y-%m-%d %H:%M:%S') }}
+                    </td>
+                    <td>
+                        <span style="font-family: 'JetBrains Mono', monospace; font-size: 0.8rem; font-weight: 700; color: #1e293b; background: #f1f5f9; padding: 0.25rem 0.5rem; border-radius: 4px;">
+                            {{ log.action }}
+                        </span>
+                    </td>
+                    <td style="font-weight: 600;">
+                        {{ log.user.full_name if log.user else 'System / Anonymous' }}
+                    </td>
+                    <td style="font-family: monospace; font-size: 0.82rem; color: #64748b;">
+                        {{ log.ip_address or '127.0.0.1' }}
+                    </td>
+                    <td style="font-size: 0.85rem; color: #334155;">
+                        {{ log.details }}
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="5" style="text-align: center; color: #94a3b8; padding: 2.5rem;">No system audit logs found.</td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+    {% if pagination.pages > 1 %}
+    <div style="padding: 1rem 1.5rem; display: flex; justify-content: space-between; align-items: center; border-top: 1px solid var(--border-color);">
+        <div>
+            {% if pagination.has_prev %}
+            <a href="{{ url_for('admin.system_logs', page=pagination.prev_num, action=selected_action) }}" class="btn btn-outline btn-sm">&larr; Previous</a>
+            {% endif %}
+        </div>
+        <div style="font-size: 0.85rem; color: #64748b;">
+            Page {{ pagination.page }} of {{ pagination.pages }}
+        </div>
+        <div>
+            {% if pagination.has_next %}
+            <a href="{{ url_for('admin.system_logs', page=pagination.next_num, action=selected_action) }}" class="btn btn-outline btn-sm">Next &rarr;</a>
+            {% endif %}
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

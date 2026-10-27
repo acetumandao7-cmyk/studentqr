@@ -1,0 +1,123 @@
+{% extends "base.html" %}
+{% block title %}Teacher Monitoring Dashboard - Smart Student Attendance{% endblock %}
+{% block header_title %}Teacher Attendance Monitor{% endblock %}
+{% block content %}
+<div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <h2 style="font-size: 1.4rem; font-weight: 800; color: #0f172a;">Classroom Attendance Feed</h2>
+        <p style="color: #64748b; font-size: 0.88rem;">Real-time student monitoring for <strong>{{ today_str }}</strong></p>
+    </div>
+    <div style="display: flex; gap: 0.75rem; align-items: center; flex-wrap: wrap;">
+        <form method="GET" action="{{ url_for('attendance.teacher_dashboard') }}" style="display: flex; gap: 0.5rem; align-items: center;">
+            <select name="session_id" class="form-select" onchange="this.form.submit()" style="padding: 0.45rem 0.85rem; font-size: 0.85rem; width: auto;">
+                <option value="">All Active Sessions</option>
+                {% for s in active_sessions %}
+                <option value="{{ s.id }}" {% if selected_session_id == s.id %}selected{% endif %}>
+                    {{ s.name }} ({{ s.start_time.strftime('%I:%M %p') }} - {{ s.end_time.strftime('%I:%M %p') }})
+                </option>
+                {% endfor %}
+            </select>
+        </form>
+        <a href="{{ url_for('attendance.scanner') }}" class="btn btn-primary btn-sm">
+            <span>Scan QR Code</span>
+        </a>
+        <a href="{{ url_for('reports.index') }}" class="btn btn-outline btn-sm">
+            <span>Reports</span>
+        </a>
+    </div>
+</div>
+<div class="metrics-grid">
+    <div class="metric-card accent-green">
+        <div class="metric-info">
+            <h3>Total Verified Scans</h3>
+            <div class="metric-value">{{ total_scanned }}</div>
+        </div>
+    </div>
+    <div class="metric-card accent-teal">
+        <div class="metric-info">
+            <h3>Present On Time</h3>
+            <div class="metric-value" style="color: #059669;">{{ total_present }}</div>
+        </div>
+    </div>
+    <div class="metric-card accent-amber">
+        <div class="metric-info">
+            <h3>Late Arrivals</h3>
+            <div class="metric-value" style="color: #d97706;">{{ total_late }}</div>
+        </div>
+    </div>
+    <div class="metric-card accent-green">
+        <div class="metric-info">
+            <h3>Turnout Rate</h3>
+            <div class="metric-value">{{ attendance_rate }}%</div>
+        </div>
+    </div>
+</div>
+<div class="card">
+    <div class="card-header">
+        <div style="display: flex; align-items: center; gap: 0.65rem;">
+            <span class="live-pulse"></span>
+            <h3 class="card-title">Live Scans Stream ({{ today_records|length }} Total)</h3>
+        </div>
+        <button onclick="location.reload()" class="btn btn-outline btn-sm" title="Refresh Live Data">
+            <span>Refresh</span>
+        </button>
+    </div>
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Exact Time</th>
+                    <th>Student ID</th>
+                    <th>Full Name</th>
+                    <th>Year & Course</th>
+                    <th>Subject</th>
+                    <th>Section</th>
+                    <th>Session</th>
+                    <th>Method</th>
+                    <th>Status</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for record in today_records %}
+                <tr>
+                    <td style="font-weight: 700; font-family: 'JetBrains Mono', monospace; font-size: 0.85rem;">
+                        {{ record.timestamp.strftime('%I:%M:%S %p') }}
+                    </td>
+                    <td style="font-family: 'JetBrains Mono', monospace; font-size: 0.85rem; color: #475569;">
+                        {{ record.student.student_id }}
+                    </td>
+                    <td style="font-weight: 700; color: #0f172a;">
+                        <a href="{{ url_for('admin.student_detail', id=record.student.id) if current_user.is_admin else '#' }}" style="color: inherit; text-decoration: underline dotted;">
+                            {{ record.student.full_name }}
+                        </a>
+                    </td>
+                    <td>
+                        <div style="font-weight: 700; color: #0284c7;">{{ record.student.course_grade }}</div>
+                        <div style="font-size: 0.72rem; color: #64748b;">{{ record.student.year_level or '1st Year' }}</div>
+                    </td>
+                    <td>
+                        <span style="font-size: 0.82rem; font-weight: 600; color: #334155;">{{ record.student.subject or 'General' }}</span>
+                    </td>
+                    <td><span style="font-weight: 600; color: #334155;">{{ record.student.section }}</span></td>
+                    <td>{{ record.session.name }}</td>
+                    <td>
+                        <span style="font-size: 0.75rem; color: #64748b; font-weight: 600;">{{ record.scan_method }}</span>
+                    </td>
+                    <td>
+                        <span class="badge {% if record.status == 'Present' %}badge-present{% elif record.status == 'Late' %}badge-late{% else %}badge-absent{% endif %}">
+                            {{ record.status }}
+                        </span>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="8" style="text-align: center; color: #94a3b8; padding: 2.5rem;">
+                        No student attendances scanned today for this session yet.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

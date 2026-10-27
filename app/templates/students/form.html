@@ -1,0 +1,301 @@
+{% extends "base.html" %}
+{% block title %}{{ 'Edit Student - ' ~ student.full_name if student else 'Register New Student' }}{% endblock %}
+{% block header_title %}{{ 'Edit Student Record' if student else 'New Student Registration' }}{% endblock %}
+{% block content %}
+<div style="max-width: 860px; margin: 0 auto;">
+    <div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <h2 style="font-size: 1.4rem; font-weight: 800; color: #0f172a;">
+                {{ 'Edit Student Details' if student else 'Enroll New Student' }}
+            </h2>
+            <p style="color: #64748b; font-size: 0.88rem;">
+                {{ 'Update profile information, assigned professor, schedule, or regenerate QR token.' if student else 'Fill in student details, assign professor, subject, and schedule. A unique QR code token will automatically be generated.' }}
+            </p>
+        </div>
+        <a href="{{ url_for('admin.students_list') }}" class="btn btn-outline btn-sm">Back to Directory</a>
+    </div>
+
+    <div class="card">
+        <div class="card-body" style="padding: 2rem;">
+            <form method="POST" id="studentForm">
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="student_id">Institutional Student ID *</label>
+                        <input type="text" id="student_id" name="student_id" class="form-control" 
+                               value="{{ student.student_id if student else next_student_id }}" 
+                               readonly style="background: #f8fafc; font-weight: 700; font-family: 'JetBrains Mono', monospace; color: #0f172a; cursor: not-allowed; border-color: #cbd5e1;">
+                        <small style="color: #64748b; font-size: 0.75rem;">Automatic sequential ID (ICCT-001, ICCT-002, etc.)</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="gender">Gender *</label>
+                        <select id="gender" name="gender" class="form-select" required>
+                            <option value="Male" {% if student and student.gender == 'Male' %}selected{% endif %}>Male</option>
+                            <option value="Female" {% if student and student.gender == 'Female' %}selected{% endif %}>Female</option>
+                            <option value="Other" {% if student and student.gender == 'Other' %}selected{% endif %}>Other</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="first_name">First Name *</label>
+                        <input type="text" id="first_name" name="first_name" class="form-control" 
+                               value="{{ student.first_name if student else '' }}" placeholder="e.g. Alexander" required>
+                    </div>
+                    <div class="form-group">
+                        <label class="form-label" for="last_name">Last Name *</label>
+                        <input type="text" id="last_name" name="last_name" class="form-control" 
+                               value="{{ student.last_name if student else '' }}" placeholder="e.g. Cruz" required>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="year_level">Year Level *</label>
+                        <select id="year_level" name="year_level" class="form-select" required>
+                            {% for y in year_levels %}
+                            <option value="{{ y }}" {% if student and student.year_level == y %}selected{% elif not student and y == '1st Year' %}selected{% endif %}>
+                                {{ y }}
+                            </option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="course_grade">Course Program * <span style="font-size: 0.75rem; color: #0284c7; font-weight: 600;">(Max 40 Students)</span></label>
+                        <select id="course_grade" name="course_grade" class="form-select" required onchange="handleCourseChange()">
+                            <option value="" disabled {% if not student %}selected{% endif %}>-- Select Course Program --</option>
+                            {% for code, cdata in courses_data.items() %}
+                            <option value="{{ code }}" 
+                                    {% if student and student.course_grade == code %}selected{% endif %}
+                                    {% if not student and cdata.is_full %}disabled{% endif %}>
+                                {{ code }} - {{ cdata.name }} (Enrolled: {{ cdata.enrolled }}/{{ cdata.max }}{% if cdata.is_full %} - FULL{% endif %})
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <div id="courseEnrollmentBadge" style="margin-top: 0.35rem; font-size: 0.75rem; display: none;"></div>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="section">Assigned Section *</label>
+                        <select id="section" name="section" class="form-select" required>
+                            <option value="" disabled selected>-- Select a course first --</option>
+                        </select>
+                        <small style="color: #64748b; font-size: 0.75rem;">5 sections available per course with active enrollment count</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="teacher_id">Active Professor / Instructor</label>
+                        <select id="teacher_id" name="teacher_id" class="form-select">
+                            <option value="">-- Select Active Professor --</option>
+                            {% for t in teachers %}
+                            <option value="{{ t.id }}" {% if student and student.teacher_id == t.id %}selected{% endif %}>
+                                Prof. {{ t.full_name }} ({{ t.username }})
+                            </option>
+                            {% endfor %}
+                        </select>
+                        <small style="color: #64748b; font-size: 0.75rem;">Professor assigned to monitor and scan attendance</small>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="subject">Enrolled Subject / Unit</label>
+                        <select id="subject" name="subject" class="form-select" onchange="handleSubjectChange()">
+                            <option value="" disabled selected>-- Select a course first --</option>
+                        </select>
+                        <div id="customSubjectWrap" style="display: none; margin-top: 0.5rem;">
+                            <input type="text" id="custom_subject" name="custom_subject" class="form-control" placeholder="Type custom subject title...">
+                        </div>
+                        <small style="color: #64748b; font-size: 0.75rem;">Curriculum units mapped exclusively to the selected course</small>
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="class_time">Class Schedule / Time</label>
+                        <input type="text" id="class_time" name="class_time" list="schedule_suggestions" class="form-control" 
+                               value="{{ student.class_time if student and student.class_time else '' }}" 
+                               placeholder="Select or type schedule time...">
+                        <datalist id="schedule_suggestions">
+                            {% for s in sessions %}
+                            <option value="{{ s.name }} ({{ s.start_time.strftime('%I:%M %p') }} - {{ s.end_time.strftime('%I:%M %p') }})">
+                            {% endfor %}
+                            <option value="07:30 AM - 09:00 AM">
+                            <option value="09:00 AM - 10:30 AM">
+                            <option value="10:30 AM - 12:00 PM">
+                            <option value="01:00 PM - 02:30 PM">
+                            <option value="02:30 PM - 04:00 PM">
+                            <option value="04:00 PM - 05:30 PM">
+                            <option value="06:00 PM - 07:30 PM">
+                        </datalist>
+                        <small style="color: #64748b; font-size: 0.75rem;">Scheduled session period for student monitoring</small>
+                    </div>
+                </div>
+
+                <div class="form-grid">
+                    <div class="form-group">
+                        <label class="form-label" for="guardian_name">Guardian / Parent Full Name</label>
+                        <input type="text" id="guardian_name" name="guardian_name" class="form-control" 
+                               value="{{ student.guardian_name if student else '' }}" placeholder="e.g. Maria Cruz">
+                    </div>
+
+                    <div class="form-group">
+                        <label class="form-label" for="guardian_contact">Guardian Contact Number</label>
+                        <input type="text" id="guardian_contact" name="guardian_contact" class="form-control" 
+                               value="{{ student.guardian_contact if student else '' }}" placeholder="e.g. 09123456789">
+                    </div>
+                </div>
+
+                {% if student %}
+                <div class="form-grid" style="border-top: 1px solid var(--border-color); padding-top: 1.25rem;">
+                    <div class="form-group">
+                        <label class="form-label" for="status">Enrollment Status</label>
+                        <select id="status" name="status" class="form-select">
+                            <option value="Active" {% if student.status == 'Active' %}selected{% endif %}>Active</option>
+                            <option value="Inactive" {% if student.status == 'Inactive' %}selected{% endif %}>Inactive</option>
+                        </select>
+                    </div>
+
+                    <div class="form-group" style="display: flex; align-items: center; margin-top: 1.5rem;">
+                        <label style="display: flex; align-items: center; gap: 0.5rem; font-size: 0.85rem; color: #475569; cursor: pointer;">
+                            <input type="checkbox" name="regenerate_qr" value="1" style="accent-color: var(--primary);">
+                            <span><strong>Regenerate QR Code Token</strong> (Use if badge was lost or compromised)</span>
+                        </label>
+                    </div>
+                </div>
+                {% endif %}
+
+                <div style="margin-top: 2rem; display: flex; justify-content: flex-end; gap: 0.75rem;">
+                    <a href="{{ url_for('admin.students_list') }}" class="btn btn-outline">Cancel</a>
+                    <button type="submit" class="btn btn-primary">
+                        <span>{{ 'Save Changes' if student else 'Create Student & Generate QR' }}</span>
+                    </button>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+<script>
+const COURSES_DATA = {{ courses_data | tojson }};
+const CURRENT_STUDENT_SECTION = "{{ student.section if student else '' }}";
+const CURRENT_STUDENT_SUBJECT = "{{ student.subject if student and student.subject else '' }}";
+
+function handleCourseChange() {
+    const courseSelect = document.getElementById('course_grade');
+    const sectionSelect = document.getElementById('section');
+    const subjectSelect = document.getElementById('subject');
+    const customWrap = document.getElementById('customSubjectWrap');
+    const badge = document.getElementById('courseEnrollmentBadge');
+    const selectedCourse = courseSelect.value;
+
+    sectionSelect.innerHTML = '';
+    subjectSelect.innerHTML = '';
+    if (customWrap) {
+        customWrap.style.display = 'none';
+        document.getElementById('custom_subject').value = '';
+    }
+
+    if (!selectedCourse || !COURSES_DATA[selectedCourse]) {
+        const defaultSec = document.createElement('option');
+        defaultSec.value = '';
+        defaultSec.disabled = true;
+        defaultSec.selected = true;
+        defaultSec.textContent = '-- Select a course first --';
+        sectionSelect.appendChild(defaultSec);
+
+        const defaultSub = document.createElement('option');
+        defaultSub.value = '';
+        defaultSub.disabled = true;
+        defaultSub.selected = true;
+        defaultSub.textContent = '-- Select a course first --';
+        subjectSelect.appendChild(defaultSub);
+
+        badge.style.display = 'none';
+        return;
+    }
+
+    const cdata = COURSES_DATA[selectedCourse];
+    badge.style.display = 'block';
+    if (cdata.is_full) {
+        badge.innerHTML = `<span style="color: #dc2626; font-weight: 700;">Capacity reached: ${cdata.enrolled}/${cdata.max} enrolled</span>`;
+    } else {
+        const remaining = cdata.max - cdata.enrolled;
+        badge.innerHTML = `<span style="color: #16a34a; font-weight: 600;">Available slots: ${remaining} of ${cdata.max} (${cdata.enrolled} enrolled)</span>`;
+    }
+
+    const placeholderSec = document.createElement('option');
+    placeholderSec.value = '';
+    placeholderSec.disabled = true;
+    if (!CURRENT_STUDENT_SECTION) {
+        placeholderSec.selected = true;
+    }
+    placeholderSec.textContent = '-- Choose a section --';
+    sectionSelect.appendChild(placeholderSec);
+
+    cdata.sections.forEach(sec => {
+        const opt = document.createElement('option');
+        opt.value = sec.name;
+        opt.textContent = `${sec.name} (${sec.count} Enrolled)`;
+        if (CURRENT_STUDENT_SECTION && CURRENT_STUDENT_SECTION === sec.name) {
+            opt.selected = true;
+        }
+        sectionSelect.appendChild(opt);
+    });
+
+    const placeholderSub = document.createElement('option');
+    placeholderSub.value = '';
+    placeholderSub.disabled = true;
+    if (!CURRENT_STUDENT_SUBJECT) {
+        placeholderSub.selected = true;
+    }
+    placeholderSub.textContent = `-- Select ${selectedCourse} Subject / Unit --`;
+    subjectSelect.appendChild(placeholderSub);
+
+    let subjectMatched = false;
+    if (cdata.subjects) {
+        cdata.subjects.forEach(sub => {
+            const opt = document.createElement('option');
+            opt.value = sub;
+            opt.textContent = sub;
+            if (CURRENT_STUDENT_SUBJECT && CURRENT_STUDENT_SUBJECT === sub) {
+                opt.selected = true;
+                subjectMatched = true;
+            }
+            subjectSelect.appendChild(opt);
+        });
+    }
+
+    const otherOpt = document.createElement('option');
+    otherOpt.value = 'OTHER';
+    otherOpt.textContent = 'Other / Custom Subject...';
+    if (CURRENT_STUDENT_SUBJECT && !subjectMatched) {
+        otherOpt.selected = true;
+        if (customWrap) {
+            customWrap.style.display = 'block';
+            document.getElementById('custom_subject').value = CURRENT_STUDENT_SUBJECT;
+        }
+    }
+    subjectSelect.appendChild(otherOpt);
+}
+
+function handleSubjectChange() {
+    const subjectSelect = document.getElementById('subject');
+    const customWrap = document.getElementById('customSubjectWrap');
+    if (subjectSelect.value === 'OTHER') {
+        customWrap.style.display = 'block';
+        document.getElementById('custom_subject').focus();
+    } else {
+        customWrap.style.display = 'none';
+    }
+}
+
+document.addEventListener('DOMContentLoaded', function() {
+    if (document.getElementById('course_grade').value) {
+        handleCourseChange();
+    }
+});
+</script>
+{% endblock %}

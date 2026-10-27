@@ -1,0 +1,107 @@
+{% extends "base.html" %}
+{% block title %}Faculty Management - Smart Student Attendance{% endblock %}
+{% block header_title %}Faculty & Professor Management{% endblock %}
+{% block content %}
+<div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <h2 style="font-size: 1.4rem; font-weight: 800; color: #0f172a;">Faculty & Professor Directory</h2>
+        <p style="color: #64748b; font-size: 0.88rem;">Manage teaching personnel, monitor permissions, and assign portal access</p>
+    </div>
+    <div style="display: flex; gap: 0.5rem; flex-wrap: wrap;">
+        <a href="{{ url_for('admin.teacher_create') }}" class="btn btn-primary btn-sm">
+            <span>Add Professor / Teacher</span>
+        </a>
+    </div>
+</div>
+<div class="card" style="margin-bottom: 1.5rem;">
+    <div class="card-body" style="padding: 1.25rem;">
+        <form method="GET" action="{{ url_for('admin.teachers_list') }}" style="display: grid; grid-template-columns: 1fr 220px 110px; gap: 1rem; align-items: flex-end;">
+            <div>
+                <label class="form-label">Search Query</label>
+                <input type="text" name="search" value="{{ search }}" class="form-control" placeholder="Search by name, username, or email...">
+            </div>
+            <div>
+                <label class="form-label">Account Status</label>
+                <select name="status" class="form-select">
+                    <option value="">All Statuses</option>
+                    <option value="active" {% if selected_status == 'active' %}selected{% endif %}>Active</option>
+                    <option value="inactive" {% if selected_status == 'inactive' %}selected{% endif %}>Inactive</option>
+                </select>
+            </div>
+            <div style="display: flex; gap: 0.5rem;">
+                <button type="submit" class="btn btn-primary" style="flex: 1; padding: 0.65rem;">Filter</button>
+                <a href="{{ url_for('admin.teachers_list') }}" class="btn btn-outline" style="padding: 0.65rem 0.85rem;" title="Reset">Clear</a>
+            </div>
+        </form>
+    </div>
+</div>
+<div class="card">
+    <div class="card-header">
+        <h3 class="card-title">Registered Professors & Teachers ({{ teachers|length }})</h3>
+    </div>
+    <div class="table-responsive">
+        <table class="data-table">
+            <thead>
+                <tr>
+                    <th>Full Name</th>
+                    <th>Username</th>
+                    <th>Email Address</th>
+                    <th>Role</th>
+                    <th>Account Status</th>
+                    <th>Last Active</th>
+                    <th style="text-align: right;">Actions</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for t in teachers %}
+                <tr>
+                    <td style="font-weight: 700; color: #0f172a;">
+                        {{ t.full_name }}
+                    </td>
+                    <td style="font-family: 'JetBrains Mono', monospace; font-weight: 600; color: #334155;">
+                        <code>{{ t.username }}</code>
+                    </td>
+                    <td style="color: #64748b; font-size: 0.9rem;">
+                        {{ t.email }}
+                    </td>
+                    <td>
+                        <span class="badge badge-role-teacher">
+                            {{ t.role }}
+                        </span>
+                    </td>
+                    <td>
+                        <span class="badge {% if t.is_active %}badge-present{% else %}badge-absent{% endif %}">
+                            {{ 'Active' if t.is_active else 'Inactive' }}
+                        </span>
+                    </td>
+                    <td style="font-size: 0.82rem; color: #64748b;">
+                        {{ t.last_login.strftime('%b %d, %Y %I:%M %p') if t.last_login else 'Never logged in' }}
+                    </td>
+                    <td style="text-align: right; white-space: nowrap;">
+                        <a href="{{ url_for('admin.teacher_edit', id=t.id) }}" class="btn btn-outline btn-sm">
+                            <span>Edit</span>
+                        </a>
+                        <form action="{{ url_for('admin.teacher_toggle_status', id=t.id) }}" method="POST" style="display: inline-block;">
+                            <button type="submit" class="btn btn-outline btn-sm" style="{% if t.is_active %}color: #d97706; border-color: rgba(217, 119, 6, 0.3);{% else %}color: #059669; border-color: rgba(5, 150, 105, 0.3);{% endif %}">
+                                <span>{{ 'Deactivate' if t.is_active else 'Activate' }}</span>
+                            </button>
+                        </form>
+                        <form action="{{ url_for('admin.teacher_delete', id=t.id) }}" method="POST" style="display: inline-block;" onsubmit="return confirm('Are you sure you want to delete Professor {{ t.full_name }}?');">
+                            <button type="submit" class="btn btn-outline btn-sm" style="color: #dc2626; border-color: rgba(220, 38, 38, 0.25);">
+                                <span>Delete</span>
+                            </button>
+                        </form>
+                    </td>
+                </tr>
+                {% else %}
+                <tr>
+                    <td colspan="7" style="text-align: center; color: #94a3b8; padding: 2.5rem;">
+                        No teachers or professors found matching the criteria.
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+{% endblock %}

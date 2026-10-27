@@ -1,0 +1,158 @@
+{% extends "base.html" %}
+{% block title %}{{ student.full_name }} - Student Profile & QR Badge{% endblock %}
+{% block header_title %}Student Profile & QR Identification{% endblock %}
+{% block content %}
+<div class="no-print" style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <h2 style="font-size: 1.4rem; font-weight: 800; color: #0f172a;">{{ student.full_name }}</h2>
+        <p style="color: #64748b; font-size: 0.88rem;">Student ID: <strong>{{ student.student_id }}</strong> &bull; Section: <strong>{{ student.section }}</strong></p>
+    </div>
+    <div style="display: flex; gap: 0.5rem;">
+        <button onclick="window.print()" class="btn btn-primary btn-sm">
+            <span>Print Student Badge</span>
+        </button>
+        {% if current_user.is_admin %}
+        <a href="{{ url_for('admin.student_edit', id=student.id) }}" class="btn btn-outline btn-sm">
+            <span>Edit Profile</span>
+        </a>
+        <a href="{{ url_for('admin.students_list') }}" class="btn btn-outline btn-sm">Back to Directory</a>
+        {% endif %}
+    </div>
+</div>
+<div style="display: grid; grid-template-columns: 360px 1fr; gap: 1.75rem; align-items: start;">
+    <div>
+        <div class="id-badge-card">
+            <div class="id-badge-header">
+                <h4>STUDENT IDENTIFICATION</h4>
+                <p>Attendance & Monitoring System</p>
+            </div>
+            <div class="id-badge-body">
+                <div class="id-badge-qr">
+                    {% if student.qr_image_path %}
+                    <img src="{{ student.qr_image_path }}" alt="Student QR Code">
+                    {% else %}
+                    <div style="height: 100%; display: flex; align-items: center; justify-content: center; color: #94a3b8; font-size: 0.8rem;">
+                        No QR Generated
+                    </div>
+                    {% endif %}
+                </div>
+                <div class="id-badge-name">{{ student.full_name }}</div>
+                <div class="id-badge-meta">{{ student.year_level }} &bull; {{ student.course_grade }} - {{ student.section }}</div>
+                <div class="id-badge-code">{{ student.student_id }}</div>
+                <div style="margin-top: 1.25rem; font-size: 0.72rem; color: #94a3b8; border-top: 1px dashed #e2e8f0; padding-top: 0.75rem;">
+                    Institutional Property &bull; Non-Transferable
+                </div>
+            </div>
+        </div>
+        <div class="no-print" style="margin-top: 1.25rem; text-align: center;">
+            <a href="{{ student.qr_image_path }}" download="{{ student.student_id }}_QR.png" class="btn btn-outline btn-sm" style="width: 100%;">
+                <span>Download QR PNG File</span>
+            </a>
+        </div>
+    </div>
+    <div class="no-print" style="display: flex; flex-direction: column; gap: 1.5rem;">
+        <div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 1rem;">
+            <div class="card" style="padding: 1.25rem; text-align: center; border-top: 3px solid #059669;">
+                <div style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Present Sessions</div>
+                <div style="font-size: 1.75rem; font-weight: 800; color: #059669;">{{ total_present }}</div>
+            </div>
+            <div class="card" style="padding: 1.25rem; text-align: center; border-top: 3px solid #d97706;">
+                <div style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Late Arrivals</div>
+                <div style="font-size: 1.75rem; font-weight: 800; color: #d97706;">{{ total_late }}</div>
+            </div>
+            <div class="card" style="padding: 1.25rem; text-align: center; border-top: 3px solid #0d9488;">
+                <div style="font-size: 0.75rem; font-weight: 700; color: #64748b; text-transform: uppercase;">Total Attendance</div>
+                <div style="font-size: 1.75rem; font-weight: 800; color: #0f172a;">{{ attendances|length }}</div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Student Profile Details</h3>
+            </div>
+            <div class="card-body">
+                <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 1.25rem;">
+                    <div>
+                        <div style="font-size: 0.75rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Year Level</div>
+                        <div style="font-weight: 600; font-size: 0.95rem; color: #0f172a;">{{ student.year_level or '1st Year' }}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.75rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Course Program</div>
+                        <div style="font-weight: 700; font-size: 0.95rem; color: #0284c7;">{{ student.course_grade }}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.75rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Section</div>
+                        <div style="font-weight: 600; font-size: 0.95rem; color: #0f172a;">{{ student.section }}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.75rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Assigned Professor</div>
+                        <div style="font-weight: 600; font-size: 0.95rem; color: #0f172a;">{{ ('Prof. ' ~ student.teacher.full_name) if student.teacher else 'None Assigned' }}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.75rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Enrolled Subject</div>
+                        <div style="font-weight: 600; font-size: 0.95rem; color: #0f172a;">{{ student.subject or 'N/A' }}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.75rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Class Schedule</div>
+                        <div style="font-weight: 600; font-size: 0.95rem; color: #0f172a;">{{ student.class_time or 'N/A' }}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.75rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Gender</div>
+                        <div style="font-weight: 600; font-size: 0.95rem; color: #0f172a;">{{ student.gender }}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.75rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Enrollment Status</div>
+                        <div>
+                            <span class="badge {% if student.status == 'Active' %}badge-present{% else %}badge-absent{% endif %}">
+                                {{ student.status }}
+                            </span>
+                        </div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.75rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Guardian / Parent</div>
+                        <div style="font-weight: 600; font-size: 0.95rem; color: #0f172a;">{{ student.guardian_name or 'None specified' }}</div>
+                    </div>
+                    <div>
+                        <div style="font-size: 0.75rem; color: #64748b; font-weight: 700; text-transform: uppercase;">Guardian Contact</div>
+                        <div style="font-weight: 600; font-family: monospace; font-size: 0.95rem; color: #0f172a;">{{ student.guardian_contact or 'N/A' }}</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Attendance History</h3>
+            </div>
+            <div class="table-responsive">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Date</th>
+                            <th>Time</th>
+                            <th>Session</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        {% for att in attendances %}
+                        <tr>
+                            <td style="font-weight: 600;">{{ att.date.strftime('%b %d, %Y') }}</td>
+                            <td style="font-family: monospace;">{{ att.timestamp.strftime('%I:%M %p') }}</td>
+                            <td>{{ att.session.name }}</td>
+                            <td>
+                                <span class="badge {% if att.status == 'Present' %}badge-present{% elif att.status == 'Late' %}badge-late{% else %}badge-absent{% endif %}">
+                                    {{ att.status }}
+                                </span>
+                            </td>
+                        </tr>
+                        {% else %}
+                        <tr>
+                            <td colspan="4" style="text-align: center; color: #94a3b8; padding: 2rem;">No attendance entries recorded yet for this student.</td>
+                        </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}

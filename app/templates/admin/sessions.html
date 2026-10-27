@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block title %}Sessions & Schedules - Smart Student Attendance{% endblock %}
+{% block header_title %}Attendance Sessions Configuration{% endblock %}
+{% block content %}
+<div style="margin-bottom: 1.5rem;">
+    <h2 style="font-size: 1.4rem; font-weight: 800; color: #0f172a;">Attendance Sessions & Schedules</h2>
+    <p style="color: #64748b; font-size: 0.88rem;">Configure class time windows and late arrival cutoffs for automatic status classification</p>
+</div>
+<div style="display: grid; grid-template-columns: 1fr 380px; gap: 1.5rem; align-items: start;">
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Configured Sessions</h3>
+        </div>
+        <div class="table-responsive">
+            <table class="data-table">
+                <thead>
+                    <tr>
+                        <th>Session Name</th>
+                        <th>Start Time</th>
+                        <th>Late Threshold</th>
+                        <th>End Time</th>
+                        <th>Status</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for session in sessions %}
+                    <tr>
+                        <td style="font-weight: 700; color: #0f172a;">{{ session.name }}</td>
+                        <td style="font-family: monospace;">{{ session.start_time.strftime('%I:%M %p') }}</td>
+                        <td style="font-family: monospace; color: #d97706; font-weight: 600;">
+                            After {{ session.late_threshold_time.strftime('%I:%M %p') }}
+                        </td>
+                        <td style="font-family: monospace;">{{ session.end_time.strftime('%I:%M %p') }}</td>
+                        <td>
+                            <span class="badge {% if session.is_active %}badge-present{% else %}badge-absent{% endif %}">
+                                {{ 'Active' if session.is_active else 'Inactive' }}
+                            </span>
+                        </td>
+                    </tr>
+                    {% else %}
+                    <tr>
+                        <td colspan="5" style="text-align: center; color: #94a3b8; padding: 2rem;">No attendance sessions configured.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+    <div class="card">
+        <div class="card-header">
+            <h3 class="card-title">Add Attendance Session</h3>
+        </div>
+        <div class="card-body">
+            <form method="POST" action="{{ url_for('admin.sessions_manage') }}">
+                <div class="form-group">
+                    <label class="form-label" for="name">Session Label *</label>
+                    <input type="text" id="name" name="name" class="form-control" placeholder="e.g. Afternoon Session" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="start_time">Start Time (HH:MM) *</label>
+                    <input type="time" id="start_time" name="start_time" class="form-control" required>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="late_threshold_time">Late Arrival Cutoff (HH:MM) *</label>
+                    <input type="time" id="late_threshold_time" name="late_threshold_time" class="form-control" required>
+                    <small style="color: #64748b; font-size: 0.75rem;">Scans after this time are automatically marked <strong>Late</strong></small>
+                </div>
+                <div class="form-group">
+                    <label class="form-label" for="end_time">Cutoff End Time (HH:MM) *</label>
+                    <input type="time" id="end_time" name="end_time" class="form-control" required>
+                </div>
+                <button type="submit" class="btn btn-primary" style="width: 100%; margin-top: 0.5rem;">
+                    <span>Save Session</span>
+                </button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}

@@ -1,0 +1,92 @@
+{% extends "base.html" %}
+{% block title %}Live Camera QR Scanner - Smart Student Attendance{% endblock %}
+{% block header_title %}QR Code Attendance Scanner{% endblock %}
+{% block content %}
+<div style="margin-bottom: 1.5rem; display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 1rem;">
+    <div>
+        <h2 style="font-size: 1.4rem; font-weight: 800; color: #0f172a;">Camera QR Scanner & Validator</h2>
+        <p style="color: #64748b; font-size: 0.88rem;">Scan student badges to automatically record attendance with sub-second validation</p>
+    </div>
+    <div style="display: flex; align-items: center; gap: 0.75rem; background: white; padding: 0.5rem 1rem; border-radius: 8px; border: 1px solid var(--border-color); box-shadow: var(--shadow-sm);">
+        <label for="session-select" style="font-size: 0.85rem; font-weight: 700; color: #1e293b; white-space: nowrap;">
+            Current Session:
+        </label>
+        <select id="session-select" class="form-select" style="padding: 0.35rem 0.75rem; font-size: 0.85rem; font-weight: 600; min-width: 200px;">
+            {% for s in sessions %}
+            <option value="{{ s.id }}" {% if default_session and default_session.id == s.id %}selected{% endif %}>
+                {{ s.name }} (Threshold: {{ s.late_threshold_time.strftime('%I:%M %p') }})
+            </option>
+            {% endfor %}
+        </select>
+    </div>
+</div>
+<div class="scanner-container">
+    <div class="scanner-viewbox">
+        <div style="width: 100%; display: flex; justify-content: space-between; align-items: center; margin-bottom: 0.85rem;">
+            <div style="display: flex; align-items: center; gap: 0.5rem;">
+                <span class="live-pulse"></span>
+                <span style="font-size: 0.85rem; font-weight: 700; text-transform: uppercase; letter-spacing: 0.05em; color: #f8fafc;">
+                    Camera Viewfinder
+                </span>
+            </div>
+            <div style="font-size: 0.8rem; color: #94a3b8; font-family: monospace;">15 FPS Auto-Detect</div>
+        </div>
+        <div id="reader"></div>
+        <div class="scanner-overlay">
+            <span id="scan-indicator">Position the student's QR code in the camera frame to scan.</span>
+        </div>
+        <div style="width: 100%; max-width: 540px; margin-top: 1.5rem; padding-top: 1.25rem; border-top: 1px solid rgba(255,255,255,0.1);">
+            <form id="manual-scan-form" style="display: flex; gap: 0.5rem;">
+                <input type="text" id="manual-id-input" class="form-control" placeholder="Manual Override: Enter Student ID or Token..." style="background: rgba(255,255,255,0.08); border-color: rgba(255,255,255,0.2); color: white;">
+                <button type="submit" class="btn btn-primary" style="white-space: nowrap;">
+                    <span>Submit</span>
+                </button>
+            </form>
+        </div>
+    </div>
+    <div style="display: flex; flex-direction: column; gap: 1.25rem;">
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Verification Status</h3>
+                <span style="font-size: 0.75rem; color: #64748b; font-weight: 600;">Instant Feedback</span>
+            </div>
+            <div class="card-body">
+                <div id="scan-result-box">
+                    <div style="text-align: center; padding: 2rem 1rem; color: #94a3b8;">
+                        <p style="font-size: 0.95rem; font-weight: 700; color: #475569; margin-bottom: 0.35rem;">Awaiting QR Scan</p>
+                        <p style="font-size: 0.82rem; color: #94a3b8;">Point student ID card towards the camera</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="card">
+            <div class="card-header">
+                <h3 class="card-title">Recent Scans This Session</h3>
+            </div>
+            <div class="table-responsive" style="max-height: 280px; overflow-y: auto;">
+                <table class="data-table">
+                    <thead>
+                        <tr>
+                            <th>Time</th>
+                            <th>ID</th>
+                            <th>Name</th>
+                            <th>Sec</th>
+                            <th>Status</th>
+                        </tr>
+                    </thead>
+                    <tbody id="recent-scans-body">
+                        <tr id="no-scans-row">
+                            <td colspan="5" style="text-align: center; color: #94a3b8; padding: 1.5rem;">
+                                No cards scanned yet in this camera session.
+                            </td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+{% block scripts %}
+<script src="{{ url_for('static', filename='js/scanner.js') }}"></script>
+{% endblock %}
