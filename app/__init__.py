@@ -22,6 +22,24 @@ def create_app(config_class=Config):
 
     os.makedirs(app.config['QR_FOLDER'], exist_ok=True)
 
+    with app.app_context():
+        try:
+            db.create_all()
+            admin = User.query.filter((User.username == 'admin') | (User.email == 'admin@school.edu')).first()
+            if not admin:
+                admin = User(
+                    username='admin',
+                    full_name='System Administrator',
+                    email='admin@school.edu',
+                    role='Administrator',
+                    is_active=True
+                )
+                admin.set_password('admin123')
+                db.session.add(admin)
+                db.session.commit()
+        except Exception:
+            db.session.rollback()
+
     from app.auth.routes import auth_bp
     from app.admin.routes import admin_bp
     from app.attendance.routes import attendance_bp
