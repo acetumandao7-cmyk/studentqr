@@ -16,6 +16,8 @@
             <option value="{{ s.id }}" {% if default_session and default_session.id == s.id %}selected{% endif %}>
                 {{ s.name }} (Threshold: {{ s.late_threshold_time.strftime('%I:%M %p') }})
             </option>
+            {% else %}
+            <option value="" disabled selected>No active sessions found</option>
             {% endfor %}
         </select>
     </div>

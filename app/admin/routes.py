@@ -1,5 +1,6 @@
+from pathlib import Path
 from datetime import date, datetime
-from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify
+from flask import Blueprint, render_template, request, redirect, url_for, flash, jsonify, current_app
 from flask_login import login_required, current_user
 from app.models import db, User, Student, SessionSchedule, AttendanceRecord, SystemLog
 from app.utils import role_required, generate_qr_token, create_student_qr_image, get_client_ip
@@ -10,7 +11,6 @@ admin_bp = Blueprint('admin', __name__)
 @login_required
 @role_required('Administrator')
 def admin_guard():
-    """Ensure only administrators access these routes"""
     pass
 
 @admin_bp.route('/dashboard')
@@ -377,6 +377,10 @@ def student_edit(id):
 @admin_bp.route('/students/<int:id>')
 def student_detail(id):
     student = Student.query.get_or_404(id)
+    qr_file = Path(current_app.config['QR_FOLDER']) / f"{student.qr_code_token}.png"
+    if not qr_file.exists():
+        student.qr_image_path = create_student_qr_image(student.qr_code_token)
+        db.session.commit()
     history = student.attendances.order_by(AttendanceRecord.timestamp.desc()).limit(30).all()
 
     total_present = student.attendances.filter_by(status='Present').count()
@@ -418,6 +422,11 @@ def batch_qrcodes():
     if section:
         query = query.filter_by(section=section)
     students = query.order_by(Student.last_name.asc()).all()
+    for s in students:
+        qr_file = Path(current_app.config['QR_FOLDER']) / f"{s.qr_code_token}.png"
+        if not qr_file.exists():
+            s.qr_image_path = create_student_qr_image(s.qr_code_token)
+    db.session.commit()
     sections = [s[0] for s in db.session.query(Student.section).distinct().all() if s[0]]
 
     return render_template('students/qrcodes.html', students=students, sections=sections, selected_section=section)

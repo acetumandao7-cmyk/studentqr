@@ -1,4 +1,4 @@
-from datetime import datetime, date, time
+from datetime import datetime, date, time, timezone, timedelta
 from flask import Blueprint, render_template, request, jsonify, flash, redirect, url_for
 from flask_login import login_required, current_user
 from sqlalchemy.exc import IntegrityError
@@ -10,9 +10,9 @@ attendance_bp = Blueprint('attendance', __name__)
 @attendance_bp.route('/teacher/dashboard')
 @login_required
 def teacher_dashboard():
-    """Teacher monitoring dashboard showing real-time statistics and today's activity."""
-    today = date.today()
-    active_sessions = SessionSchedule.query.filter_by(is_active=True).all()
+    ph_tz = timezone(timedelta(hours=8))
+    today = datetime.now(ph_tz).date()
+    active_sessions = SessionSchedule.query.filter_by(is_active=True).order_by(SessionSchedule.start_time.asc()).all()
     selected_session_id = request.args.get('session_id', type=int)
 
     base_query = AttendanceRecord.query.filter_by(date=today)
@@ -55,15 +55,19 @@ def teacher_dashboard():
 @attendance_bp.route('/scanner')
 @login_required
 def scanner():
-    """Camera-enabled QR code scanner interface."""
-    sessions = SessionSchedule.query.filter_by(is_active=True).all()
-    default_session = sessions[0] if sessions else None
+    sessions = SessionSchedule.query.filter_by(is_active=True).order_by(SessionSchedule.start_time.asc()).all()
+    default_session = None
 
-    current_time = datetime.now().time()
+    ph_tz = timezone(timedelta(hours=8))
+    current_time = datetime.now(ph_tz).time()
+
     for s in sessions:
         if s.start_time <= current_time <= s.end_time:
             default_session = s
             break
+
+    if not default_session and sessions:
+        default_session = sessions[0]
 
     return render_template(
         'attendance/scanner.html',
@@ -74,12 +78,6 @@ def scanner():
 @attendance_bp.route('/api/scan', methods=['POST'])
 @login_required
 def process_scan():
-    """
-    Sub-second QR Code validation & attendance processing API.
-    - Validates QR token or Student ID
-    - Prevents duplicate attendance for the same session & day
-    - Classifies status (Present / Late) automatically
-    """
     data = request.get_json(silent=True) or {}
     qr_payload = data.get('qr_payload', '').strip()
     session_id = data.get('session_id')
@@ -130,7 +128,12 @@ def process_scan():
             'message': f'Student {student.full_name} is marked as Inactive. Contact administrator.'
         }), 403
 
-    today = date.today()
+    ph_tz = timezone(timedelta(hours=8))
+    now_ph = datetime.now(ph_tz)
+    today = now_ph.date()
+    now = now_ph.replace(tzinfo=None)
+    current_time = now.time()
+
     is_duplicate, existing = check_duplicate_attendance(student.id, session_obj.id, today)
     if is_duplicate:
         return jsonify({
@@ -141,10 +144,7 @@ def process_scan():
             'existing_record': existing.to_dict()
         }), 409
 
-    now = datetime.now()
-    current_time = now.time()
     computed_status = session_obj.determine_status(current_time)
-
     scan_method = 'MANUAL_OVERRIDE' if manual_override else 'QR_SCAN'
 
     try:
@@ -197,8 +197,8 @@ def process_scan():
 @attendance_bp.route('/api/today-feed')
 @login_required
 def today_feed():
-    """Live JSON endpoint for real-time dashboard updates."""
-    today = date.today()
+    ph_tz = timezone(timedelta(hours=8))
+    today = datetime.now(ph_tz).date()
     session_id = request.args.get('session_id', type=int)
 
     query = AttendanceRecord.query.filter_by(date=today)

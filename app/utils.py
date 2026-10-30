@@ -9,13 +9,11 @@ from flask_login import current_user
 from app.models import db, AttendanceRecord
 
 def get_client_ip():
-    """Extract client IP address considering proxy headers."""
     if request.headers.get('X-Forwarded-For'):
         return request.headers.get('X-Forwarded-For').split(',')[0].strip()
     return request.remote_addr or '127.0.0.1'
 
 def role_required(*roles):
-    """Decorator to enforce role-based access control (RBAC)."""
     def decorator(f):
         @wraps(f)
         def decorated_function(*args, **kwargs):
@@ -28,6 +26,20 @@ def role_required(*roles):
     return decorator
 
 def get_verification_base_url():
+    render_url = os.environ.get('RENDER_EXTERNAL_URL')
+    if render_url:
+        return render_url.rstrip('/')
+    base_url = os.environ.get('BASE_URL')
+    if base_url:
+        return base_url.rstrip('/')
+    try:
+        from flask import has_request_context, request
+        if has_request_context():
+            proto = request.headers.get('X-Forwarded-Proto', request.scheme)
+            host = request.headers.get('X-Forwarded-Host', request.host)
+            return f"{proto}://{host}".rstrip('/')
+    except Exception:
+        pass
     import socket
     try:
         s = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
@@ -68,10 +80,6 @@ def create_student_qr_image(qr_token: str, student_info: dict = None) -> str:
     return f"/static/qrcodes/{file_name}"
 
 def check_duplicate_attendance(student_id: int, session_id: int, target_date):
-    """
-    Checks if student has already recorded attendance for the session on the given date.
-    Returns: (bool is_duplicate, AttendanceRecord or None)
-    """
     record = AttendanceRecord.query.filter_by(
         student_id=student_id,
         session_id=session_id,
