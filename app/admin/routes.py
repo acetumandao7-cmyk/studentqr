@@ -386,14 +386,17 @@ def student_detail(id):
     total_present = student.attendances.filter_by(status='Present').count()
     total_late = student.attendances.filter_by(status='Late').count()
     total_absent = student.attendances.filter_by(status='Absent').count()
+    total_attendance = total_present + total_late + total_absent
 
     return render_template(
         'students/profile.html',
         student=student,
+        attendances=history,
         history=history,
         total_present=total_present,
         total_late=total_late,
-        total_absent=total_absent
+        total_absent=total_absent,
+        total_attendance=total_attendance
     )
 
 @admin_bp.route('/students/<int:id>/delete', methods=['POST'])
